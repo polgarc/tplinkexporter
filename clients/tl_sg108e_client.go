@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"regexp"
 	"strings"
@@ -18,9 +20,11 @@ type TPLINKSwitchClient interface {
 }
 
 type TPLINKSwitch struct {
-	host     string
-	username string
-	password string
+	host       string
+	username   string
+	password   string
+	httpClient *http.Client
+	loggedIn   bool
 }
 
 type portStats struct {
@@ -33,32 +37,73 @@ func (client *TPLINKSwitch) GetHost() string {
 	return client.host
 }
 
+func (client *TPLINKSwitch) Login() error {
+	requestData := url.Values{"username": {client.username}, "password": {client.password}, "logon": {"Login"}}
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/logon.cgi", client.host), strings.NewReader(requestData.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(string(body), "var logonInfo = new Array(\n0,") {
+		client.loggedIn = true
+		log.Printf("Logged in to %s as %s\n", client.host, client.username)
+		return nil
+	} else {
+		client.loggedIn = false
+		return fmt.Errorf("error logging in to %s as %s", client.host, client.username)
+	}
+}
+
+func (client *TPLINKSwitch) fetchPortStats() (string, error) {
+	resp, err := client.httpClient.Get(fmt.Sprintf("http://%s/PortStatisticsRpm.htm", client.host))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
 func (client *TPLINKSwitch) GetPortStats() ([]portStats, error) {
 	type allInfo struct {
 		State      []int
 		LinkStatus []int
 		Pkts       []int
 	}
-	// "http://IP/logon.cgi"
-	resp, err := http.PostForm(fmt.Sprintf("http://%s/logon.cgi", client.host), url.Values{"username": {client.username}, "password": {client.password}, "logon": {"Login"}})
-	if err != nil {
-		// handle error
-		return nil, err
+
+	if !client.loggedIn {
+		err := client.Login()
+		if err != nil {
+			return nil, err
+		}
 	}
-	defer resp.Body.Close()
-	// fmt.Println(resp, err)
-	// "http://IP/PortStatisticsRpm.htm")
-	resp2, err := http.Get(fmt.Sprintf("http://%s/PortStatisticsRpm.htm", client.host))
+
+	body, err := client.fetchPortStats()
 	if err != nil {
-		// handle error
 		return nil, err
+	} else if strings.Contains(string(body), "var logonInfo = new Array(\n0,") {
+		// logged out or session expired, try to login again
+		client.Login()
+		body, err = client.fetchPortStats()
+		if err != nil {
+			return nil, err
+		}
 	}
-	defer resp2.Body.Close()
-	body, err := ioutil.ReadAll(resp2.Body)
-	if err != nil {
-		// handle error
-		return nil, err
-	}
+
 	// fmt.Println(string(body))
 	var jbody string = strings.ReplaceAll(
 		strings.ReplaceAll(
@@ -91,7 +136,8 @@ func (client *TPLINKSwitch) GetPortStats() ([]portStats, error) {
 		}
 		portsInfos = append(portsInfos, portInfo)
 	}
-	fmt.Println(portsInfos)
+	// fmt.Println(portsInfos)
+	log.Printf("Fetched port statistics")
 	return portsInfos, nil
 }
 
@@ -109,10 +155,18 @@ var tip = "";
 </script>
 */
 
-func NewTPLinkSwitch(host string, username string, password string) *TPLINKSwitch {
-	return &TPLINKSwitch{
-		host:     host,
-		username: username,
-		password: password,
+func NewTPLinkSwitch(host string, username string, password string) (*TPLINKSwitch, error) {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
 	}
+	httpClient := &http.Client{
+		Jar: jar,
+	}
+	return &TPLINKSwitch{
+		host:       host,
+		username:   username,
+		password:   password,
+		httpClient: httpClient,
+	}, nil
 }

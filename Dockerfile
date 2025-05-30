@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine as build
+FROM golang:1.24-alpine AS build
 
 WORKDIR /build
 COPY go.mod go.sum ./
@@ -7,7 +7,7 @@ RUN go mod download
 COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o app
 
-FROM alpine:latest as certs
+FROM alpine:latest AS certs
 RUN apk --update add ca-certificates
 
 FROM scratch
