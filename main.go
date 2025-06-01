@@ -29,7 +29,7 @@ func main() {
 	trafficCollector := collectors.NewTrafficCollector("tplinkexporter", tplinkSwitch)
 	prometheus.MustRegister(trafficCollector)
 	http.Handle("/metrics", promhttp.Handler())
-	log.Printf("Beginning to serve on port :" + strconv.Itoa(*port))
+	log.Printf("Beginning to serve on port %v", *port)
 	err = tplinkSwitch.Login()
 	if err != nil {
 		log.Println(err)
