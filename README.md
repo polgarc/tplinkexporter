@@ -6,8 +6,10 @@ Exports port stats from TPLink's EasySmart Switches. Very alpha, basic functiona
 Tested on:
 
 TPLink EasySmart Gigabit 8 Port Switch (TL-SG108E):
+- v2 Firmware: 1.0.1 Build 20211021 Rel.56865
 - v3 Firmware: 1.0.0 Build 20171214 Rel.70905 (based on web GUI)
 - v4 Firmware: 1.0.0 Build 20181120 Rel.40749
+- v5 Firmware: 1.0.0 Build 20230218 Rel.51358
 
 Should work on the switches of the same family, but untested personally:
 - TPLink EasySmart Gigabit 16 Port Switch TL-SG116E

@@ -22,10 +22,17 @@ func main() {
 	)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-	tplinkSwitch := clients.NewTPLinkSwitch(*host, *username, *password)
+	tplinkSwitch, err := clients.NewTPLinkSwitch(*host, *username, *password)
+	if err != nil {
+		log.Fatalf("Error creating tplink switch client: %v", err)
+	}
+	err = tplinkSwitch.Login()
+	if err != nil {
+		log.Fatal(err)
+	}
 	trafficCollector := collectors.NewTrafficCollector("tplinkexporter", tplinkSwitch)
 	prometheus.MustRegister(trafficCollector)
 	http.Handle("/metrics", promhttp.Handler())
-	log.Printf("Beginning to serve on port :" + strconv.Itoa(*port))
+	log.Printf("Beginning to serve on port %v", *port)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), nil))
 }
