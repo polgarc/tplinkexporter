@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/thelastguardian/tplinkexporter/clients"
 	"github.com/thelastguardian/tplinkexporter/collectors"
