@@ -32,7 +32,7 @@ func main() {
 	log.Printf("Beginning to serve on port %v", *port)
 	err = tplinkSwitch.Login()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), nil))
 }

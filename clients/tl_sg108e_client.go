@@ -95,9 +95,12 @@ func (client *TPLINKSwitch) GetPortStats() ([]portStats, error) {
 	body, err := client.fetchPortStats()
 	if err != nil {
 		return nil, err
-	} else if strings.Contains(string(body), "var logonInfo = new Array(\n0,") {
+	} else if strings.Contains(body, "var logonInfo = new Array(\n0,") {
 		// logged out or session expired, try to login again
-		client.Login()
+		err = client.Login()
+		if err != nil {
+			return nil, err
+		}
 		body, err = client.fetchPortStats()
 		if err != nil {
 			return nil, err
