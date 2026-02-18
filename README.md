@@ -20,17 +20,31 @@ Basic Grafana dashboard using the exporter - https://grafana.com/grafana/dashboa
 
 ## Usage
 
-go run main.go --host <IP/host of switch> --username <WEBGUI username> --password <WEBGUI password>
+Command line:
 
-Default username and password for this switch is admin and admin, so:
+`go run main.go --host 10.0.0.3 --username admin --password admin`
 
-go run main.go --host 10.0.0.3 --username admin --password admin
+Docker:
 
-## Run with docker:
+`docker run -p 9717:9717 polgarc/tplinkexporter --host 10.0.0.3 --username admin --password admin`
 
-docker run -it -p 9717:9717 thelastguardian/tplinkexporter --host 10.0.0.3 --username admin --password admin
+Docker compose:
 
-## Metrics Exported on :9717/metrics
+```yaml
+services:
+  tplink-exporter:
+    image: polgarc/tplinkexporter:latest
+    environment:
+      HOST: tplink-1.lan
+      USERNAME: admin
+      PASSWORD: admin
+    ports:
+      - 9717:9717
+```
+
+## Metrics
+
+Exported on `<host>:9717/metrics`:
 
 ```
 tplinkexporter_portstats_state{portnum="1"-"8",host="host"}
