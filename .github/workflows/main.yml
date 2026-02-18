@@ -38,7 +38,7 @@ jobs:
             type=sha
       - name: Login to DockerHub
         uses: docker/login-action@v3
-        if: "${{ secrets.DOCKERHUB_TOKEN != '' }}"
+        if: ${{ vars.PUSH_IMAGE == 'true' }}
         with:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -47,5 +47,5 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: "${{ secrets.DOCKERHUB_TOKEN != '' }}"
+          push: ${{ vars.PUSH_IMAGE == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
